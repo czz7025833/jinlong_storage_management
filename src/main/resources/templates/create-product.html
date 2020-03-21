@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <!-- import CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+</head>
+<body>
+<div align="center" style="margin-bottom: 20px;">创建商品</div>
+<div align="center" id="app">
+    <el-form :model="formLineListObj" class="demo-form-inline">
+
+        <el-form v-for="(formInline, index) in formLineListObj.formLineList"
+                 :inline="true"
+                 :key="index"
+                 :model="formInline"
+                 class="demo-dynamic">
+            <el-form-item label="货号" style="width: 15%" >
+                <el-input size="small" v-model="formInline.sku" placeholder="货号"></el-input>
+            </el-form-item>
+            <el-form-item label="商品名" style="width: 15%">
+                <el-input size="small" v-model="formInline.name" placeholder="商品名"></el-input>
+            </el-form-item>
+            <el-form-item label="颜色" style="width: 15%">
+                <el-input size="small" v-model="formInline.color" placeholder="颜色"></el-input>
+            </el-form-item>
+            <el-form-item label="尺码" style="width: 15%">
+                <el-input size="small" v-model="formInline.size" placeholder="尺码"></el-input>
+            </el-form-item>
+            <el-form-item label="标准售价" style="width: 15%">
+                <el-input size="small" v-model="formInline.standardPrice" placeholder="标准售价"></el-input>
+            </el-form-item>
+            <el-form-item label="库存量" style="width: 15%">
+                <el-input size="small" v-model="formInline.quantity" placeholder="库存量"></el-input>
+            </el-form-item>
+        </el-form>
+    </el-form>
+    <el-button type="primary" @click="save">保存</el-button>
+    <el-button type="primary" @click="add">添加</el-button>
+</div>
+
+</body>
+<!-- import Vue before Element -->
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<!-- import JavaScript -->
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<script src="https://cdn.staticfile.org/vue-resource/1.5.1/vue-resource.min.js"></script>
+<script>
+    vm = new Vue({
+      el: '#app',
+	  data:{
+		  formLineListObj:{
+			  formLineList:[
+			  			  {
+			  			  		sku: '',
+			  					name: '',
+			  			  		color: '',
+			  			  		size: '',
+								standardPrice: '',
+			  			  		quantity: ''
+			  			  }
+			  ]
+		  }
+	  },
+	  methods:{
+		  add: function(){
+			  //copy the last one
+			  this.$data.formLineListObj
+			  .formLineList.push(JSON.parse(JSON.stringify(this.$data.formLineListObj.formLineList[this.$data.formLineListObj.formLineList.length -1])))
+		  },
+		  save: function(){
+			  //save the all product info
+			  this.$http({
+				url: 'http://localhost:8080/products',
+				headers: {
+				        'Content-Type': 'application/json',
+				   },
+				method: "POST",
+				body: this.$data.formLineListObj.formLineList
+				})
+			  .then(function(res){
+				  console.log(res)
+				  window.location = "http://localhost:8080/"
+			  })
+			  .catch(function(res){
+				  console.log(res)
+				  alert(res.bodyText)
+			  })
+		  }
+	  }
+    })
+
+
+  </script>
+</html>

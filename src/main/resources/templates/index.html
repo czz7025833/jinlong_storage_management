@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <!-- import CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+</head>
+<body>
+<div align="center">简易库存系统</div>
+<div align="center">
+    <div id="app">
+        <template>
+            <el-table
+                    :data="tableData"
+                    stripe
+                    style="width: 100%">
+                <el-table-column
+                        prop="sku"
+                        label="货号"
+                        width="150">
+                </el-table-column>
+                <el-table-column
+                        prop="name"
+                        label="商品名"
+                        width="150">
+                </el-table-column>
+                <el-table-column
+                        prop="color"
+                        label="颜色"
+                        width="150">
+                </el-table-column>
+                <el-table-column
+                        prop="size"
+                        label="尺码"
+                        width="150">
+                </el-table-column>
+                <el-table-column
+                        prop="standardPrice"
+                        label="标准售价"
+                        width="150">
+                </el-table-column>
+                <el-table-column
+                        prop="quantity"
+                        label="库存量"
+                        width="150">
+                </el-table-column>
+                <el-table-column
+                        prop="action"
+                        label="操作"
+                        width="150">
+                    <template slot-scope="scope">
+                        <el-button @click="handleEdit(scope.row)" type="text" size="small">编辑</el-button>
+                        <el-button @click="handleDelete(scope.row)" type="text" size="small">删除</el-button>
+                        <el-button @click="handleDeleteQuantity(scope.row)" type="text" size="small">减库存</el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+        </template>
+        <div>
+            <el-row>
+                <el-col :span="6" align="right">
+                    <el-button type="primary" size="small" @click="add_new_product()" style="margin-top: 20px;">添加商品</el-button>
+                </el-col>
+                <el-col :span="12">
+                    <el-pagination
+                            style="margin-top: 20px;"
+                            background
+                            layout="prev, pager, next"
+                            :current-page.sync="currentPage"
+                            @current-change="current_page_change"
+                            :page-size="pageSize"
+                            :total="pageTotal">
+                    </el-pagination>
+                </el-col>
+                <el-col :span="6" align="left">
+                    <el-autocomplete
+                            style="margin-top: 20px;"
+                            class="inline-input"
+                            v-model="selectedSku"
+                            :fetch-suggestions="querySearch"
+                            placeholder="搜索货号"
+                            @select="handleSelect"
+                    ></el-autocomplete>
+                </el-col>
+            </el-row>
+        </div>
+    </div>
+</div>
+
+</body>
+<!-- import Vue before Element -->
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<!-- import JavaScript -->
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<script src="https://cdn.staticfile.org/vue-resource/1.5.1/vue-resource.min.js"></script>
+<script>
+    vm = new Vue({
+      el: '#app',
+	  data:{
+		  tableData: [],
+		  pageTotal: 0,
+		  pageSize: 0,
+		  selectedSku: '',
+		  allSkus: [],
+		  currentPage: 1
+	  },
+	  mounted() {
+	  	this.getPagedData(1)
+	  },
+	  methods:{
+		  handleEdit: function(row){
+			  window.location = "http://localhost:8080/edit-product/"+row.id
+		  },
+		  handleDelete: function(row){
+			  //delete product by id
+			  this.$http({
+				url: 'http://localhost:8080/products/'+row.id,
+				headers: {
+				        'Content-Type': 'application/json',
+				   },
+				method: "DELETE"
+				})
+			  .then(function(res){
+				  window.location = "http://localhost:8080/"
+			  })
+			  .catch(function(res){
+				  alert(res.bodyText)
+			  })
+		  },
+		  handleDeleteQuantity: function(row){
+		      //first row.quantity minus 1
+		      quantity = row.quantity
+		      if(quantity == 0){
+		        alert("已经没有啦")
+		        return;
+		      }
+		      if(quantity == 1){
+		        alert("最后一双啦");
+		      }
+		      row_copy = JSON.parse(JSON.stringify(row))
+		      row_copy.quantity =  quantity - 1
+			  //update product by id
+			  this.$http({
+				url: 'http://localhost:8080/products/'+row.id,
+				headers: {
+				        'Content-Type': 'application/json',
+				   },
+				method: "POST",
+				body: row_copy
+				})
+			  .then(function(res){
+				  this.getPagedData(this.currentPage)
+			  })
+			  .catch(function(res){
+				  alert(res.bodyText)
+			  })
+		  },
+		  add_new_product: function(){
+			  window.location = "http://localhost:8080/create-product"
+		  },
+		  current_page_change: function(page){
+			  console.log(this.currentPage)
+			  this.getPagedData(page)
+		  },
+		  getPagedData: function(pageNum){
+		  			  url = 'http://localhost:8080/products?page='+ (pageNum - 1)
+		  			  if(this.selectedSku != ''){
+		  			  	url += ('&sku='+this.selectedSku)
+		  			  }
+		  			  this.$http.get(url).then(function(res){
+		  			  	this.tableData = res.body
+		  			  	this.pageTotal = Number(res.headers['map']['pagetotal'][0])
+		  			  	this.pageSize = Number(res.headers['map']['pagesize'][0])
+		  			  },function(){
+		  			      console.log('product page 请求失败处理');
+		  			  });
+		  },
+		  querySearch: function(queryString, cb) {
+			  console.log("enter query Search")
+			  // mount all skus
+			  this.$http.get('http://localhost:8080/products/skus').then(function(res){
+			  	this.allSkus = res.body
+				var skus = []
+				for(var i = 0; i < this.allSkus.length; i++){
+					skus.push({"value":this.allSkus[i]})
+				}
+				var results = queryString ? skus.filter(this.createFilter(queryString)) : skus;
+				// 调用 callback 返回建议列表的数据
+				cb(skus);
+			  },function(){
+			      console.log('sku请求失败处理');
+			  });
+		   },
+			createFilter: function(queryString){
+				return (sku) => {
+				          return (sku.value.toLowerCase().indexOf(queryString.toLowerCase()) === 0);
+				        };
+			},
+		  handleSelect: function(selected){
+			  this.selectedSku = selected.value
+			  this.getPagedData(1)
+		  }
+	  }
+    })
+  </script>
+</html>
