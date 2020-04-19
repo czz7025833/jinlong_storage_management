@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <!-- import CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+</head>
+<body>
+<div align="center" style="margin-bottom: 20px;">编辑会员信息</div>
+<div align="center" id="app">
+    <el-form :model="formLineListObj" class="demo-form-inline">
+
+        <el-form v-for="(formInline, index) in formLineListObj.formLineList"
+                 :inline="true"
+                 :key="index"
+                 :model="formInline"
+                 class="demo-dynamic">
+            <el-form-item label="手机号" style="width: 15%" >
+                <el-input size="small" v-model="formInline.cellphoneNumber" placeholder="手机号"></el-input>
+            </el-form-item>
+            <el-form-item label="积分" style="width: 15%">
+                <el-input size="small" v-model="formInline.points" placeholder="积分"></el-input>
+            </el-form-item>
+        </el-form>
+    </el-form>
+    <el-button type="primary" @click="save">保存</el-button>
+</div>
+
+</body>
+<!-- import Vue before Element -->
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<!-- import JavaScript -->
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<script src="https://cdn.staticfile.org/vue-resource/1.5.1/vue-resource.min.js"></script>
+<script>
+	url = window.location.href;
+	url_parts = url.split("/")
+	id = url_parts[url_parts.length - 1]
+    vm = new Vue({
+      el: '#app',
+	  data:{
+		  formLineListObj:{
+			  formLineList:[]
+		  }
+	  },
+	  mounted() {
+	  	this.$http.get('http://localhost:8080/users/'+id).then(function(res){
+	  	    console.log(res.body);
+	  		this.formLineListObj.formLineList.push(res.body)
+	  	},function(){
+	  	    console.log('请求失败处理');
+	  	});
+	  },
+	  methods:{
+		  save: function(){
+			  //save the specified product info
+			  this.$http({
+				url: 'http://localhost:8080/users/'+id,
+				headers: {
+				        'Content-Type': 'application/json',
+				   },
+				method: "POST",
+				body: this.$data.formLineListObj.formLineList[0]
+				})
+			  .then(function(res){
+				  console.log(res)
+				  window.location = "http://localhost:8080/"
+			  })
+			  .catch(function(res){
+				  console.log(res)
+				  alert(res.bodyText)
+			  })
+		  }
+	  }
+    })
+  </script>
+</html>

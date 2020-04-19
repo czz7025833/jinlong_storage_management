@@ -42,7 +42,6 @@ public class ProductService {
         products.forEach(product -> productRepository.save(product));
     }
 
-    @Transactional
     public void deleteProductById(Long id){
         productRepository.deleteById(id);
     }
